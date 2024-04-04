@@ -10,7 +10,7 @@ CREATE TABLE Department (
 -- Doctor Table
 CREATE TABLE Doctor (
     Doctor_ID INT AUTO_INCREMENT PRIMARY KEY,
-    First_Name VARCHAR(45) NOT NULL,  -
+    First_Name VARCHAR(45) NOT NULL,
     Last_Name VARCHAR(45),
     Contact_Info VARCHAR(100)  
 );
