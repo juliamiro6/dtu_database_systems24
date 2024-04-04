@@ -10,7 +10,6 @@ NATURAL JOIN Medicine
 NATURAL JOIN Appointment
 WHERE Medicine.Type = 'Antibiotic';
 
-
 -- Query 2: Find the number of rooms and the total capacity of each department
 SELECT Department.Department_Name, 
 COUNT(*) AS Department_Rooms, SUM(Room.Capacity) AS Department_Total_Capacity
@@ -20,11 +19,19 @@ NATURAL JOIN Appointment
 NATURAL JOIN Room 
 GROUP BY Department.Department_Name;
 
--- Query 3
+-- Query 3: Find the contact information for all patients visited by doctor 'Daniel Harris'
+SELECT Patient.First_Name, Patient.Last_Name, Patient.phone_number
+FROM Patient
+WHERE Patient_ID IN (
+    SELECT Appointment.Patient_ID
+    FROM Appointment
+    JOIN Doctor ON Appointment.Doctor_ID = Doctor.Doctor_ID
+    WHERE Doctor.First_Name = 'Daniel' AND Doctor.Last_Name = 'Harris');
 
--- Function
+
+-- FUNCTION: Create a function that calculates the average age of patients in a specific department.
 DELIMITER //
-CREATE FUNCTION GetAverageAgeInDepartment(Department_Name INT)
+CREATE FUNCTION GetAverageAgeInDepartment(Department_ID INT)
 RETURNS DECIMAL(5, 2)
 BEGIN
 	DECLARE Average_Age DECIMAL(5, 2);
@@ -39,32 +46,35 @@ SELECT GetAverageAgeInDepartment(8);
 SELECT Department_ID, Department_Name, GetAverageAgeInDepartment(Department_ID) AS Average_Age
 FROM Department;
 
--- Procedure
+
+-- PROCEDURE: Schedule appointment for a patient with a specific doctor, considering the doctor's
+-- availability and specialty
 DELIMITER //
 
 CREATE PROCEDURE ScheduleAppointment(
-    IN p_patient_id INT,
-    IN p_doctor_id INT,
-    IN p_room_id INT,
-    IN p_day DATE,
-    IN p_start_time TIME,
-    IN p_end_time TIME
+    IN Scheduled_Patient_ID INT,
+    IN Scheduled_Doctor_ID INT,
+    IN Scheduled_Room_ID INT,
+    IN Scheduled_Day DATE,
+    IN Scheduled_Start_Time TIME,
+    IN Sheduled_End_Time TIME
 )
 BEGIN
     -- Check if the doctor is available
-    DECLARE doctor_available INT DEFAULT 0;
+    DECLARE Doctor_Available INT DEFAULT 0;
     
     SELECT COUNT(*)
-    INTO doctor_available
+    INTO Doctor_Available
     FROM Appointment
-    WHERE Doctor_ID = p_doctor_id
-    AND Day = p_day
-    AND ((Start_Time < p_end_time AND End_Time > p_start_time));
+    WHERE Doctor_ID = Scheduled_Doctor_ID
+    AND Day = Scheduled_Day
+    AND ((Start_Time < Sheduled_End_Time AND End_Time > Scheduled_Start_Time));
 
     -- Proceed only if the doctor is available
     IF doctor_available = 0 THEN
         INSERT INTO Appointment (Day, Start_Time, End_Time, Doctor_ID, Patient_ID, Room_ID)
-        VALUES (p_day, p_start_time, p_end_time, p_doctor_id, p_patient_id, p_room_id);
+        VALUES (Scheduled_Day, Scheduled_Start_Time, Sheduled_End_Time, Scheduled_Doctor_ID, 
+        Scheduled_Patient_ID, Scheduled_Room_ID);
         SELECT "Appointment scheduled successfully." AS Message;
     ELSE
         SELECT "Doctor is not available in the given time slot." AS Message;
@@ -74,5 +84,8 @@ END //
 DELIMITER ;
 
 SELECT*FROM Appointment;
-CALL ScheduleAppointment(18, 4, 6, '2024-04-01', '11:00:00', '11:30:00');
+SELECT*FROM Doctor;
+CALL ScheduleAppointment(1, 4, 2, '2024-04-01', '09:00:00', '09:30:00');
 
+-- TRIGGER
+-- Send confirmation information to the patient about the appointment
